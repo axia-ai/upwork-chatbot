@@ -1,0 +1,23 @@
+# Local working docs — not part of the deliverable
+CLAUDE.md
+SPEC.md
+HANDOFF.md
+
+# Python / backend
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.db
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Tooling / agents
+.playwright-mcp/
