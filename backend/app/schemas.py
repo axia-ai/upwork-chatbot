@@ -8,7 +8,7 @@ from typing import Literal, Optional
 from pydantic import BaseModel
 
 TicketStatus = Literal["open", "in_progress", "closed"]
-Intent = Literal["order", "returns", "recommend", "handoff", "fallback"]
+Intent = Literal["order", "returns", "recommend", "handoff", "fallback", "general"]
 
 
 # --- Chat ---
