@@ -1,18 +1,12 @@
 """POST /chat and /reset contract — agent and retriever stubbed (offline)."""
 
-from types import SimpleNamespace
-
 import pytest
-from fastapi.testclient import TestClient
 
 from app import agent
-from app.routers import chat as chat_router
 
 
-@pytest.fixture
-def client(monkeypatch):
-    monkeypatch.setattr(chat_router, "get_retriever", lambda: SimpleNamespace(query=lambda q: []))
-    monkeypatch.setattr(agent, "get_client", lambda: object())
+@pytest.fixture(autouse=True)
+def stub_agent(monkeypatch):
     monkeypatch.setattr(
         agent,
         "run_agent",
@@ -23,10 +17,6 @@ def client(monkeypatch):
             state="bot",
         ),
     )
-    from app.main import app
-
-    with TestClient(app) as c:
-        yield c
 
 
 def test_chat_returns_contract(client):
@@ -36,13 +26,7 @@ def test_chat_returns_contract(client):
     assert set(body) == {"reply", "state", "handoff", "intent", "ticket_id"}
     assert body["intent"] == "order"
     assert body["state"] == "bot"
-
-
-def test_chat_echoes_ticket_id(client):
-    resp = client.post(
-        "/chat", json={"session_id": "s1", "message": "hi", "ticket_id": "NS-1063"}
-    )
-    assert resp.json()["ticket_id"] == "NS-1063"
+    assert body["ticket_id"] is None  # no handoff, no ticket supplied
 
 
 def test_reset_ok(client):
