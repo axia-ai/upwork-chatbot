@@ -1,0 +1,98 @@
+@import 'tailwindcss';
+
+@theme {
+  /* One simple sans across the whole UI — character comes from palette,
+     the contour motif, and layout rather than typeface mixing. */
+  --font-display: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+
+  /* North Star Outfitters — heritage outfitter palette */
+  --color-paper: #ffffff; /* page background */
+  --color-bone: #f6f3ec; /* raised surfaces — subtle warm panels */
+  --color-ink: #1d241f; /* near-black, green-tinted */
+  --color-spruce: #21392c; /* primary deep green */
+  --color-spruce-700: #2c4d3a;
+  --color-moss: #5d7059; /* muted green */
+  --color-ochre: #b3742a; /* accent */
+  --color-ochre-soft: #c79a4f;
+  --color-rust: #9b4a2c; /* secondary accent */
+  --color-stone: #6c6a5d; /* muted text */
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* mono utility label — small caps, tracked */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes msg-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bounce-dot {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  40% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
+
+.anim-rise {
+  animation: rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.anim-panel-in {
+  animation: panel-in 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.anim-msg-in {
+  animation: msg-in 0.24s ease-out both;
+}
