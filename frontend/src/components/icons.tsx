@@ -1,16 +1,5 @@
 // Small inline icon set — keeps the prototype dependency-free.
 
-export function StarMark({ className = '' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-      <path
-        d="M12 1.6l2.1 6.3a1 1 0 0 0 .64.64L21 10.7l-5.1 2.0a1 1 0 0 0-.57.57L12 22.4l-2.0-5.1a1 1 0 0 0-.57-.57L3 14.7l6.26-2.16a1 1 0 0 0 .64-.64L12 1.6z"
-        fill="currentColor"
-      />
-    </svg>
-  )
-}
-
 export function ChatIcon({ className = '' }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
