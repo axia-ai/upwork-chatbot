@@ -1,68 +1,37 @@
 import { useEffect, useRef, useState } from 'react'
 import { ChatIcon, CloseIcon, SendIcon } from './icons'
 import { NorthStar } from './Topo'
-import { QUICK_REPLIES } from '../data/mock'
-import { botReply } from '../lib/botReply'
+import { QUICK_REPLIES, type ChatMessage } from '../data/mock'
 
-type Msg = { id: number; role: 'bot' | 'user'; text: string }
-
-let counter = 0
-const nextId = () => ++counter
-
+// Presentational floating widget. Conversation state lives in App and is shared
+// with the in-ticket composer (one ChatMessage model, one send path).
 export function ChatWidget({
   open,
   onOpenChange,
-  onHandoff,
+  messages,
+  typing,
+  liveAgent,
+  onSend,
 }: {
   open: boolean
   onOpenChange: (v: boolean) => void
-  onHandoff: () => void
+  messages: ChatMessage[]
+  typing: boolean
+  liveAgent: boolean
+  onSend: (text: string) => void
 }) {
-  const [messages, setMessages] = useState<Msg[]>([
-    {
-      id: nextId(),
-      role: 'bot',
-      text: "Hello — I'm the North Star guide. I can track an order, help with a return, recommend gear, or connect you with a person. What do you need?",
-    },
-  ])
   const [input, setInput] = useState('')
-  const [typing, setTyping] = useState(false)
-  const [liveAgent, setLiveAgent] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
   }, [messages, typing, open])
 
-  function botSay(text: string, after = 650) {
-    setTyping(true)
-    window.setTimeout(() => {
-      setTyping(false)
-      setMessages((m) => [...m, { id: nextId(), role: 'bot', text }])
-    }, after)
-  }
-
-  function send(text: string) {
+  function submit(text: string) {
     const trimmed = text.trim()
     if (!trimmed) return
-    setMessages((m) => [...m, { id: nextId(), role: 'user', text: trimmed }])
+    onSend(trimmed)
     setInput('')
-    const reply = botReply(trimmed)
-    if (reply.handoff) {
-      setLiveAgent(true)
-      onHandoff()
-    }
-    botSay(reply.text)
-  }
-
-  function quick(key: string) {
-    const label = QUICK_REPLIES.find((q) => q.key === key)?.label ?? key
-    setMessages((m) => [...m, { id: nextId(), role: 'user', text: label }])
-    if (key === 'human') {
-      setLiveAgent(true)
-      onHandoff()
-    }
-    botSay(botReply(label).text)
   }
 
   return (
@@ -138,7 +107,7 @@ export function ChatWidget({
               {QUICK_REPLIES.map((q) => (
                 <button
                   key={q.key}
-                  onClick={() => quick(q.key)}
+                  onClick={() => submit(q.label)}
                   className="border border-ink/15 bg-white px-3 py-1.5 text-xs font-medium text-spruce transition-colors hover:border-spruce hover:bg-spruce hover:text-bone"
                 >
                   {q.label}
@@ -151,7 +120,7 @@ export function ChatWidget({
           <form
             onSubmit={(e) => {
               e.preventDefault()
-              send(input)
+              submit(input)
             }}
             className="flex items-center gap-2 border-t border-ink/12 bg-bone px-3 py-3"
           >
@@ -171,7 +140,7 @@ export function ChatWidget({
             </button>
           </form>
           <p className="eyebrow bg-bone pb-2 text-center text-[0.56rem] text-stone/70">
-            Prototype · responses mocked until backend is connected
+            North Star Guide · powered by Claude
           </p>
         </div>
       )}

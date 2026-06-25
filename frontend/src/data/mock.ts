@@ -1,6 +1,6 @@
-// Mock data for the North Star Outfitters prototype.
-// NOTE: this is placeholder UI data only — the real bot will be wired to the
-// FastAPI backend + Claude later. Order / policy / shipping facts mirror the brief.
+// Static storefront/UI data and shared types for the North Star Outfitters app.
+// Chat and tickets are served by the FastAPI backend (see src/lib/api.ts); the
+// product catalogue and status styling below are presentation-only.
 
 export type TicketStatus = 'open' | 'in_progress' | 'closed'
 
@@ -90,47 +90,6 @@ export const CATEGORIES = [
 
 export const MOCK_USER = { name: 'Riley Carter', initials: 'RC' }
 
-export const TICKETS: Ticket[] = [
-  {
-    id: 'NS-1063',
-    subject: 'Damaged tent pole on arrival',
-    status: 'in_progress',
-    topic: 'Human handoff',
-    updated: '2h ago',
-    transcript: [
-      { id: 'm1', role: 'user', text: 'My new tent arrived with a cracked pole. I want to talk to a person.', time: '10:02' },
-      { id: 'm2', role: 'bot', text: "I'm sorry about the damaged pole, Riley. I'm connecting you with a live agent now — your ticket is open and a teammate will jump in shortly.", time: '10:02' },
-      { id: 'm3', role: 'bot', text: 'Live agent Dana has joined the conversation.', time: '10:05' },
-    ],
-  },
-  {
-    id: 'NS-1057',
-    subject: 'Return a jacket that runs small',
-    status: 'open',
-    topic: 'Returns & exchanges',
-    updated: 'Yesterday',
-    transcript: [
-      { id: 'm1', role: 'user', text: 'How do I return a jacket?', time: '16:41' },
-      { id: 'm2', role: 'bot', text: 'Happy to help! We offer 30-day returns on unused items in their original packaging. You can start your return here: northstar.example.com/returns', time: '16:41' },
-      { id: 'm3', role: 'user', text: 'Great, thanks!', time: '16:42' },
-    ],
-  },
-  {
-    id: 'NS-1042',
-    subject: 'Where is order #111?',
-    status: 'closed',
-    topic: 'Order tracking',
-    updated: '3 days ago',
-    transcript: [
-      { id: 'm1', role: 'user', text: 'Where is my order?', time: '09:12' },
-      { id: 'm2', role: 'bot', text: "I can track that for you — what's your order number?", time: '09:12' },
-      { id: 'm3', role: 'user', text: '#111', time: '09:13' },
-      { id: 'm4', role: 'bot', text: 'Good news! Order #111 has shipped and is arriving tomorrow. Anything else I can help with?', time: '09:13' },
-      { id: 'm5', role: 'user', text: "That's all, thanks!", time: '09:14' },
-    ],
-  },
-]
-
 export const STATUS_META: Record<TicketStatus, { label: string; dot: string; chip: string }> = {
   open: {
     label: 'Open',
@@ -149,32 +108,10 @@ export const STATUS_META: Record<TicketStatus, { label: string; dot: string; chi
   },
 }
 
-// Canned bot replies so the prototype demonstrates each flow without a backend.
+// Quick-reply chips in the chat widget — each sends its label to the backend.
 export const QUICK_REPLIES = [
   { key: 'track', label: 'Track my order' },
   { key: 'returns', label: 'Returns & exchanges' },
   { key: 'recommend', label: 'Recommend gear' },
   { key: 'human', label: 'Talk to a human' },
 ]
-
-export const CANNED: Record<string, string> = {
-  track: "I can help track your order — what's your order number? (Try #111, #222, or #333.)",
-  returns:
-    'We offer 30-day returns on unused items in their original packaging. Start your return here: northstar.example.com/returns. Anything else?',
-  recommend:
-    "Love it — let's find the right gear. What are you heading out for: backpacking, car camping, or day hikes? And what conditions — summer, shoulder-season, or deep cold?",
-  human:
-    "Of course — I'm connecting you with a live agent. This conversation is now a ticket marked In Progress, and a teammate will be with you shortly.",
-  fallback:
-    "I didn't quite catch that. I can help with order tracking, returns and exchanges, product recommendations, or connect you with a human — which would you like?",
-  // Live-agent persona reply used inside In Progress tickets.
-  agent:
-    "Thanks for the details — Dana from the gear team here. I've got this logged and I'm on it. Anything else I can help with while we sort it out?",
-}
-
-// Mock order statuses (mirrors the brief).
-export const ORDER_STATUS: Record<string, string> = {
-  '111': 'Order #111 has shipped and is arriving tomorrow. Anything else I can help with?',
-  '222': 'Order #222 is processing and ships within 24 hours. Anything else I can help with?',
-  '333': 'Order #333 was delivered. Did everything arrive in good shape?',
-}
