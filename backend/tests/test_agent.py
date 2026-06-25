@@ -2,7 +2,7 @@
 
 from types import SimpleNamespace
 
-from app.agent import run_agent
+from app.agent import MAX_TOOL_ITERATIONS, run_agent
 from app.session import Session
 
 
@@ -94,3 +94,46 @@ def test_successful_intent_resets_fallback_counter():
     assert result.handoff is False
     assert session.fallback_count == 0
     assert session.live_agent is False
+
+
+def test_recommendation_turn_answers_without_handoff():
+    """AC3: a recommendation answered directly (RAG) is a normal turn, not a fallback."""
+    client = FakeClient([
+        _resp("end_turn", [_text("For backpacking, the Trailhead 45 Pack is a great fit.")]),
+    ])
+    session = Session(session_id="s5")
+    result = run_agent(client, session, "recommend a backpack for backpacking")
+
+    assert result.handoff is False
+    assert result.intent == "general"  # direct answers aren't labelled order/handoff/fallback
+    assert result.reply
+
+
+def test_tool_loop_caps_iterations():
+    """A model that never stops requesting tools is bounded by MAX_TOOL_ITERATIONS."""
+    looping = [_resp("tool_use", [_tool("flag_not_understood", f"t{i}")])
+               for i in range(MAX_TOOL_ITERATIONS + 3)]
+    client = FakeClient(looping)
+    session = Session(session_id="cap")
+    result = run_agent(client, session, "loop forever")
+
+    assert len(client.calls) == MAX_TOOL_ITERATIONS  # did not spin past the cap
+    assert result.reply  # degraded reply, not empty
+
+
+def test_raising_tool_is_isolated(monkeypatch):
+    """A tool that raises yields an is_error tool_result; the turn doesn't crash."""
+    def boom(_):
+        raise RuntimeError("order service down")
+
+    monkeypatch.setattr("app.orders.get_order_status", boom)
+    client = FakeClient([
+        _resp("tool_use", [_tool("get_order_status", "t1", order_number="111")]),
+        _resp("end_turn", [_text("I hit a snag looking that up — want a human?")]),
+    ])
+    session = Session(session_id="err")
+    result = run_agent(client, session, "where is order 111")
+
+    fed_back = client.calls[1][-1]["content"][0]
+    assert fed_back.get("is_error") is True
+    assert result.reply

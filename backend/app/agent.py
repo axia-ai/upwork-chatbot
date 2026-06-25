@@ -84,6 +84,10 @@ TOOLS = [
 ]
 
 
+# Safety cap on the tool-calling loop (each iteration is a paid model call).
+MAX_TOOL_ITERATIONS = 5
+
+
 @dataclass
 class AgentResult:
     reply: str
@@ -124,9 +128,10 @@ def run_agent(
     intent = "general"
     explicit_handoff = False
     fallback = False
+    reply = ""
 
-    # Tool-calling loop: keep going until the model stops requesting tools.
-    while True:
+    # Tool-calling loop, capped so a misbehaving model can't spin (and bill) forever.
+    for _ in range(MAX_TOOL_ITERATIONS):
         response = client.messages.create(
             model=model,
             max_tokens=max_tokens,
@@ -143,23 +148,37 @@ def run_agent(
         for block in response.content:
             if block.type != "tool_use":
                 continue
-            if block.name == "get_order_status":
-                intent = "order"
-                result = orders.get_order_status(block.input.get("order_number", "")).status
-            elif block.name == "escalate_to_human":
-                intent = "handoff"
-                explicit_handoff = True
-                result = "Connected to a live agent. The ticket is now In Progress."
-            elif block.name == "flag_not_understood":
-                intent = "fallback"
-                fallback = True
-                result = "Acknowledged — offer the user the supported options."
-            else:
-                result = "Unknown tool."
-            tool_results.append(
-                {"type": "tool_result", "tool_use_id": block.id, "content": result}
-            )
+            is_error = False
+            try:
+                if block.name == "get_order_status":
+                    intent = "order"
+                    result = orders.get_order_status(block.input.get("order_number", "")).status
+                elif block.name == "escalate_to_human":
+                    intent = "handoff"
+                    explicit_handoff = True
+                    result = "Connected to a live agent. The ticket is now In Progress."
+                elif block.name == "flag_not_understood":
+                    intent = "fallback"
+                    fallback = True
+                    result = "Acknowledged — offer the user the supported options."
+                else:
+                    result = "Unknown tool."
+                    is_error = True
+            except Exception:  # noqa: BLE001 — surface the failure to the model, don't crash the turn
+                result = "That lookup failed. Apologize briefly and offer to connect a human."
+                is_error = True
+            tool_result = {"type": "tool_result", "tool_use_id": block.id, "content": result}
+            if is_error:
+                tool_result["is_error"] = True
+            tool_results.append(tool_result)
         messages.append({"role": "user", "content": tool_results})
+    else:
+        # Hit the iteration cap without a final text answer — degrade gracefully.
+        if not reply:
+            reply = (
+                "Sorry — I'm having trouble completing that right now. "
+                "Would you like me to connect you with a human?"
+            )
 
     # Apply handoff / fallback state transitions (the 2-fallback rule).
     handoff = False

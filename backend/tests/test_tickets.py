@@ -1,5 +1,7 @@
 """Ticket CRUD and the chat-handoff -> ticket link, against a throwaway DB."""
 
+from types import SimpleNamespace
+
 from app import agent
 
 
@@ -87,3 +89,28 @@ def test_handoff_flips_existing_ticket(client, monkeypatch):
     )
     assert resp.json()["ticket_id"] == "NS-1057"
     assert client.get("/tickets/NS-1057").json()["status"] == "in_progress"
+
+
+def test_explicit_handoff_end_to_end(client, monkeypatch):
+    """Real agent loop (Claude mocked) deciding handoff -> ticket flips In Progress."""
+    responses = [
+        SimpleNamespace(
+            stop_reason="tool_use",
+            content=[SimpleNamespace(type="tool_use", name="escalate_to_human", id="t1", input={})],
+        ),
+        SimpleNamespace(
+            stop_reason="end_turn",
+            content=[SimpleNamespace(type="text", text="Connecting you with a teammate now.")],
+        ),
+    ]
+    fake = SimpleNamespace(messages=SimpleNamespace(create=lambda **k: responses.pop(0)))
+    monkeypatch.setattr(agent, "get_client", lambda: fake)  # real run_agent, fake transport
+
+    resp = client.post("/chat", json={"session_id": "e2e", "message": "I want to talk to a human"})
+    body = resp.json()
+    assert body["handoff"] is True
+    assert body["state"] == "live_agent"
+
+    ticket = client.get(f"/tickets/{body['ticket_id']}").json()
+    assert ticket["status"] == "in_progress"
+    assert [m["role"] for m in ticket["transcript"]] == ["user", "bot"]

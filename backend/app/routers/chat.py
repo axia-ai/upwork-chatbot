@@ -7,9 +7,10 @@ persisted to its transcript so the frontend reflects real state.
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 
 from app import agent, tickets_service as svc
@@ -19,6 +20,7 @@ from app.retriever import get_retriever
 from app.schemas import ChatRequest, ChatResponse, ResetRequest
 from app.session import store
 
+logger = logging.getLogger("northstar.chat")
 router = APIRouter(tags=["chat"])
 
 
@@ -32,7 +34,18 @@ def chat(req: ChatRequest, session: Session = Depends(get_session)) -> ChatRespo
     chunks = get_retriever().query(req.message)
     kb_context = "\n\n".join(c.text for c in chunks)
 
-    result = agent.run_agent(agent.get_client(), convo, req.message, kb_context=kb_context)
+    # The model call is the most failure-prone step (bad key, rate limit, network).
+    # Fail cleanly with a 503 instead of leaking a 500 + stack trace to the user.
+    try:
+        result = agent.run_agent(
+            agent.get_client(), convo, req.message, kb_context=kb_context
+        )
+    except Exception:  # noqa: BLE001 — any agent/transport failure degrades to 503
+        logger.exception("agent failed for session %s", req.session_id)
+        raise HTTPException(
+            status_code=503,
+            detail="The assistant is temporarily unavailable. Please try again in a moment.",
+        )
 
     # Resolve or create the linked ticket.
     ticket = svc.get_ticket(session, req.ticket_id) if req.ticket_id else None

@@ -33,3 +33,13 @@ def test_reset_ok(client):
     resp = client.post("/reset", json={"session_id": "s1"})
     assert resp.status_code == 200
     assert resp.json() == {"session_id": "s1"}
+
+
+def test_chat_degrades_to_503_on_agent_failure(client, monkeypatch):
+    def boom(*a, **k):
+        raise RuntimeError("anthropic exploded")
+
+    monkeypatch.setattr(agent, "run_agent", boom)  # overrides the autouse stub
+    resp = client.post("/chat", json={"session_id": "s1", "message": "hi"})
+    assert resp.status_code == 503
+    assert "unavailable" in resp.json()["detail"].lower()
