@@ -139,8 +139,13 @@ def run_agent(
             tools=TOOLS,
             messages=messages,
         )
+        # Keep the latest non-empty text: the model often delivers its user-facing
+        # message in the same turn as a signal tool call (e.g. the fallback line
+        # alongside flag_not_understood), and the follow-up turn can be empty.
+        text = "".join(b.text for b in response.content if b.type == "text").strip()
+        if text:
+            reply = text
         if response.stop_reason != "tool_use":
-            reply = "".join(b.text for b in response.content if b.type == "text").strip()
             break
 
         messages.append({"role": "assistant", "content": response.content})
