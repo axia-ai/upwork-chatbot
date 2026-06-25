@@ -59,7 +59,7 @@ export function Navbar({
               {openTickets > 0 && (
                 <span
                   className={`grid h-4.5 min-w-4.5 place-items-center px-1 font-mono text-[0.62rem] ${
-                    view === 'help' ? 'bg-bone text-spruce' : 'bg-ochre text-bone'
+                    view === 'help' ? 'bg-bone text-spruce' : 'bg-ochre text-spruce'
                   }`}
                 >
                   {openTickets}

@@ -7,7 +7,7 @@ const TINTS = [
   'bg-moss text-bone',
   'bg-spruce-700 text-ochre-soft',
   'bg-ink text-moss',
-  'bg-ochre text-bone',
+  'bg-ochre text-spruce',
 ]
 
 export function Storefront({ onAskBot }: { onAskBot: () => void }) {
@@ -34,7 +34,7 @@ export function Storefront({ onAskBot }: { onAskBot: () => void }) {
             <div className="mt-9 flex flex-wrap items-center gap-4">
               <a
                 href="#shop"
-                className="bg-ochre px-7 py-3.5 text-sm font-semibold text-bone transition-colors hover:bg-ochre-soft hover:text-spruce"
+                className="bg-ochre px-7 py-3.5 text-sm font-semibold text-spruce transition-colors hover:bg-spruce hover:text-bone"
               >
                 Shop the catalogue
               </a>
