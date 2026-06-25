@@ -61,7 +61,22 @@ frontend (React + Vite + TS + Tailwind)        backend (FastAPI + Claude + RAG +
 
 You'll need **Python 3.11+**, **Node 18+**, and an **Anthropic API key**.
 
-### 1. Backend (`:8000`)
+### Option A — one command (recommended)
+
+```bash
+./start.sh
+```
+
+On the first run this installs both apps' dependencies and asks for your
+Anthropic API key (saved locally to `backend/.env`, never committed), then starts
+the backend and frontend and opens **http://localhost:5173** in your browser.
+Press **Ctrl+C** to stop. Works on macOS and Linux (and Git Bash / WSL on Windows).
+
+### Option B — run each app manually
+
+Use two terminals — one for the backend, one for the frontend.
+
+#### 1. Backend (`:8000`)
 
 ```bash
 cd backend
@@ -78,7 +93,7 @@ uvicorn app.main:app --reload --port 8000
 The embedding model (~90 MB) downloads once on first use, then is cached. The
 SQLite DB seeds three mock tickets on first run. API docs: http://localhost:8000/docs
 
-### 2. Frontend (`:5173`)
+#### 2. Frontend (`:5173`)
 
 ```bash
 cd frontend
