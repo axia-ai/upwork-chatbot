@@ -109,6 +109,23 @@ def test_recommendation_turn_answers_without_handoff():
     assert result.reply
 
 
+def test_text_in_tool_turn_survives_empty_followup():
+    """The fallback line arrives WITH flag_not_understood; an empty follow-up must
+    not blank the reply (regression for the empty-fallback bug)."""
+    client = FakeClient([
+        _resp("tool_use", [
+            _text("I didn't catch that — I can help with orders, returns, gear, or a human."),
+            _tool("flag_not_understood", "t1"),
+        ]),
+        _resp("end_turn", [_text("")]),  # model adds nothing on the follow-up turn
+    ])
+    session = Session(session_id="fb-text")
+    result = run_agent(client, session, "blarg flooble")
+
+    assert result.intent == "fallback"
+    assert "didn't catch" in result.reply.lower()
+
+
 def test_tool_loop_caps_iterations():
     """A model that never stops requesting tools is bounded by MAX_TOOL_ITERATIONS."""
     looping = [_resp("tool_use", [_tool("flag_not_understood", f"t{i}")])

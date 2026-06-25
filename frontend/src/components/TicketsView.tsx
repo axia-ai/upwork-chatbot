@@ -3,37 +3,44 @@ import { BackIcon, SendIcon } from './icons'
 import { NorthStar } from './Topo'
 import { STATUS_META, MOCK_USER, type Ticket } from '../data/mock'
 
+// Controlled by App: the list comes from GET /tickets and the open ticket (with
+// its transcript) from GET /tickets/{id}. Sending a message round-trips through
+// the backend, which persists the transcript and any status change.
 export function TicketsView({
   tickets,
-  typingId,
+  active,
+  typing,
+  onOpen,
+  onClose,
   onSend,
   onBack,
 }: {
   tickets: Ticket[]
-  typingId: string | null
-  onSend: (ticketId: string, text: string) => void
+  active: Ticket | null
+  typing: boolean
+  onOpen: (ticketId: string) => void
+  onClose: () => void
+  onSend: (text: string) => void
   onBack: () => void
 }) {
-  const [openId, setOpenId] = useState<string | null>(null)
   const [input, setInput] = useState('')
-  const active = tickets.find((t) => t.id === openId) ?? null
   const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
-  }, [active?.transcript.length, typingId, openId])
+  }, [active?.transcript.length, typing, active?.id])
 
   function submit(e: React.FormEvent) {
     e.preventDefault()
     if (!active || !input.trim()) return
-    onSend(active.id, input.trim())
+    onSend(input.trim())
     setInput('')
   }
 
   return (
     <main className="relative mx-auto max-w-4xl px-5 py-12 sm:px-8">
       <button
-        onClick={active ? () => setOpenId(null) : onBack}
+        onClick={active ? onClose : onBack}
         className="eyebrow mb-7 inline-flex items-center gap-1.5 text-[0.66rem] text-spruce transition-colors hover:text-rust"
       >
         <BackIcon className="h-4 w-4" />
@@ -64,35 +71,41 @@ export function TicketsView({
             </div>
           </div>
 
-          <ul className="anim-rise divide-y divide-ink/12 border-b border-ink/12">
-            {tickets.map((t) => (
-              <li key={t.id}>
-                <button
-                  onClick={() => setOpenId(t.id)}
-                  className="group grid w-full grid-cols-[auto_1fr_auto] items-center gap-4 py-5 text-left transition-colors hover:bg-bone/60"
-                >
-                  <span className="font-mono text-xs text-stone">{t.id}</span>
-                  <div className="min-w-0">
-                    <h3 className="truncate font-display text-lg font-semibold text-spruce">
-                      {t.subject}
-                    </h3>
-                    <p className="eyebrow mt-0.5 text-[0.62rem] text-stone">
-                      {t.topic} · {t.updated}
-                    </p>
-                  </div>
-                  <span className="flex items-center gap-3">
-                    <span
-                      className={`hidden items-center gap-1.5 px-2.5 py-0.5 text-[0.7rem] font-semibold sm:inline-flex ${STATUS_META[t.status].chip}`}
-                    >
-                      <span className={`h-1.5 w-1.5 rounded-full ${STATUS_META[t.status].dot}`} />
-                      {STATUS_META[t.status].label}
+          {tickets.length === 0 ? (
+            <p className="anim-rise py-12 text-center text-sm text-stone">
+              No tickets yet. Start a chat from the shop and ask for a human to open one.
+            </p>
+          ) : (
+            <ul className="anim-rise divide-y divide-ink/12 border-b border-ink/12">
+              {tickets.map((t) => (
+                <li key={t.id}>
+                  <button
+                    onClick={() => onOpen(t.id)}
+                    className="group grid w-full grid-cols-[auto_1fr_auto] items-center gap-4 py-5 text-left transition-colors hover:bg-bone/60"
+                  >
+                    <span className="font-mono text-xs text-stone">{t.id}</span>
+                    <div className="min-w-0">
+                      <h3 className="truncate font-display text-lg font-semibold text-spruce">
+                        {t.subject}
+                      </h3>
+                      <p className="eyebrow mt-0.5 text-[0.62rem] text-stone">
+                        {t.topic} · {t.updated}
+                      </p>
+                    </div>
+                    <span className="flex items-center gap-3">
+                      <span
+                        className={`hidden items-center gap-1.5 px-2.5 py-0.5 text-[0.7rem] font-semibold sm:inline-flex ${STATUS_META[t.status].chip}`}
+                      >
+                        <span className={`h-1.5 w-1.5 rounded-full ${STATUS_META[t.status].dot}`} />
+                        {STATUS_META[t.status].label}
+                      </span>
+                      <span className="text-stone transition-transform group-hover:translate-x-1">→</span>
                     </span>
-                    <span className="text-stone transition-transform group-hover:translate-x-1">→</span>
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </>
       )}
 
@@ -145,7 +158,7 @@ export function TicketsView({
               </div>
             ))}
 
-            {typingId === active.id && (
+            {typing && (
               <div className="flex justify-start">
                 <div className="flex gap-1 rounded-lg rounded-bl-sm border border-ink/12 bg-white px-4 py-3">
                   {[0, 1, 2].map((i) => (

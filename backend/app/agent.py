@@ -44,7 +44,11 @@ help with, and call flag_not_understood. Don't call flag_not_understood for \
 greetings or supported topics you can handle.
 
 Keep replies to a few sentences. Use only the facts in the knowledge base and the \
-tools — never make up orders, policies, or products."""
+tools — never make up orders, policies, or products.
+
+Write in plain, friendly sentences. Do not use Markdown formatting — no **bold**, \
+no # headings, and no bullet characters like * or -. A short numbered list \
+(1., 2.) is fine when it genuinely helps. A tasteful emoji is okay occasionally."""
 
 TOOLS = [
     {
@@ -139,8 +143,13 @@ def run_agent(
             tools=TOOLS,
             messages=messages,
         )
+        # Keep the latest non-empty text: the model often delivers its user-facing
+        # message in the same turn as a signal tool call (e.g. the fallback line
+        # alongside flag_not_understood), and the follow-up turn can be empty.
+        text = "".join(b.text for b in response.content if b.type == "text").strip()
+        if text:
+            reply = text
         if response.stop_reason != "tool_use":
-            reply = "".join(b.text for b in response.content if b.type == "text").strip()
             break
 
         messages.append({"role": "assistant", "content": response.content})
