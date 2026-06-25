@@ -71,7 +71,10 @@ export async function getTicket(id: string): Promise<Ticket> {
 
 // Render the API's ISO timestamp as a short relative label for the ticket list.
 export function formatUpdated(iso: string): string {
-  const then = new Date(iso).getTime()
+  // The backend serializes UTC without an explicit offset; treat a timezone-less
+  // string as UTC so the relative label isn't skewed by the browser's offset.
+  const hasTz = /([zZ]|[+-]\d{2}:?\d{2})$/.test(iso)
+  const then = new Date(hasTz ? iso : `${iso}Z`).getTime()
   if (Number.isNaN(then)) return ''
   const secs = Math.max(0, (Date.now() - then) / 1000)
   if (secs < 60) return 'Just now'
