@@ -20,9 +20,23 @@ info() { printf "\n\033[1;32m==>\033[0m %s\n" "$1"; }
 die()  { printf "\n\033[1;31mError:\033[0m %s\n\n" "$1" >&2; exit 1; }
 
 # 1. Prerequisites -----------------------------------------------------------
-command -v python3 >/dev/null || die "Python 3 is required — install it from https://www.python.org/downloads/ and re-run."
 command -v node    >/dev/null || die "Node.js is required — install it from https://nodejs.org/ and re-run."
 command -v npm     >/dev/null || die "npm is required (it comes with Node.js)."
+
+# Pick a supported Python. The ML stack (torch/transformers via
+# sentence-transformers) only ships wheels for a window of versions; a too-new
+# interpreter (3.13/3.14) has no torch wheel and pip fails with
+# "ResolutionImpossible". Prefer an installed 3.10–3.12 over whatever `python3`
+# happens to point at.
+py_supported() { case "$1" in 3.9|3.10|3.11|3.12) return 0;; *) return 1;; esac; }
+py_version()   { "$1" -c 'import sys; print("%d.%d" % sys.version_info[:2])' 2>/dev/null; }
+
+PYTHON=""
+for cand in python3.12 python3.11 python3.10 python3.9 python3; do
+  command -v "$cand" >/dev/null 2>&1 || continue
+  if py_supported "$(py_version "$cand")"; then PYTHON="$cand"; break; fi
+done
+[ -n "$PYTHON" ] || die "Need Python 3.9–3.12 (sentence-transformers/torch don't yet ship wheels for 3.13+). Install one from https://www.python.org/downloads/ — e.g. \`brew install python@3.12\` — and re-run."
 
 # 2. Anthropic API key -> backend/.env ---------------------------------------
 if [ ! -f backend/.env ] || ! grep -q '^ANTHROPIC_API_KEY=.\+' backend/.env 2>/dev/null; then
@@ -40,7 +54,13 @@ if [ ! -f backend/.env ] || ! grep -q '^ANTHROPIC_API_KEY=.\+' backend/.env 2>/d
 fi
 
 # 3. Backend dependencies ----------------------------------------------------
-[ -d backend/.venv ] || python3 -m venv backend/.venv
+# Drop a venv left behind by an unsupported interpreter (e.g. a failed first run
+# on Python 3.13+) so it gets rebuilt with the supported one selected above.
+if [ -d backend/.venv ] && ! py_supported "$(py_version backend/.venv/bin/python)"; then
+  info "Rebuilding backend/.venv with ${PYTHON} (previous one used an unsupported Python)…"
+  rm -rf backend/.venv
+fi
+[ -d backend/.venv ] || "$PYTHON" -m venv backend/.venv
 if [ ! -x backend/.venv/bin/uvicorn ]; then
   info "Installing backend dependencies (first run can take a few minutes)…"
   backend/.venv/bin/pip install --quiet --upgrade pip

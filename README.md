@@ -59,7 +59,10 @@ frontend (React + Vite + TS + Tailwind)        backend (FastAPI + Claude + RAG +
 
 ## Quick start
 
-You'll need **Python 3.11+**, **Node 18+**, and an **Anthropic API key**.
+You'll need **Python 3.9–3.12**, **Node 18+**, and an **Anthropic API key**.
+(`sentence-transformers`/`torch` don't yet ship wheels for Python 3.13+, so a
+newer interpreter fails to install — `./start.sh` auto-selects a supported one
+if you have it.)
 
 ### Option A — one command (recommended)
 
