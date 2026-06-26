@@ -81,9 +81,12 @@ Use two terminals — one for the backend, one for the frontend.
 
 #### 1. Backend (`:8000`)
 
+Use a Python 3.9–3.12 interpreter here (e.g. `python3.12`); 3.13+ has no
+`torch`/`sentence-transformers` wheel yet and `pip install` will fail.
+
 ```bash
 cd backend
-python -m venv .venv && source .venv/bin/activate
+python3.12 -m venv .venv && source .venv/bin/activate   # or python3.11 / 3.10 / 3.9
 pip install -r requirements.txt
 
 cp .env.example .env          # then put your key in .env:
