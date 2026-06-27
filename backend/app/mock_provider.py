@@ -12,6 +12,7 @@ in (the previous assistant turn), so no Session changes are required.
 
 from __future__ import annotations
 
+import re
 from types import SimpleNamespace
 
 from app import intent
@@ -47,14 +48,34 @@ _AMBIGUOUS_CLARIFY = (
 )
 
 # Small in-code catalog for semantic recommendation (mirrors products.md).
+# (name, price, category, blurb) — category mirrors the products.md sections.
 _CATALOG = [
-    ("Wildwood 3P Tent", 349, "a three-season, two-vestibule shelter under 5 lbs — great for backpacking and car camping in summer to shoulder-season"),
-    ("Polaris -10° Bag", 219, "a mummy-cut down sleeping bag rated for frosty nights — best for deep cold and shoulder-season backpacking"),
-    ("Summit Down Parka", 289, "an 800-fill down parka for alpine cold — best for deep-cold conditions"),
-    ("Aurora Base Layer", 64, "a versatile merino base layer for any trip"),
-    ("Granite GTX Boots", 199, "waterproof leather mids with a grippy sole — great for day hikes and rugged, wet terrain"),
-    ("Trailhead 45 Pack", 179, "a ventilated weekend pack — ideal for two-to-three-day backpacking trips"),
+    ("Wildwood 3P Tent", 349, "Tents", "a three-season, two-vestibule shelter under 5 lbs — great for backpacking and car camping in summer to shoulder-season"),
+    ("Polaris -10° Bag", 219, "Sleeping Bags", "a mummy-cut down sleeping bag rated for frosty nights — best for deep cold and shoulder-season backpacking"),
+    ("Summit Down Parka", 289, "Insulated Jackets", "an 800-fill down parka for alpine cold — best for deep-cold conditions"),
+    ("Aurora Base Layer", 64, "Insulated Jackets", "a versatile merino base layer for any trip"),
+    ("Granite GTX Boots", 199, "Hiking Footwear", "waterproof leather mids with a grippy sole — great for day hikes and rugged, wet terrain"),
+    ("Trailhead 45 Pack", 179, "Backpacks", "a ventilated weekend pack — ideal for two-to-three-day backpacking trips"),
 ]
+
+# Category keyword patterns, word-bounded so "backpacking" does NOT match "pack".
+# Checked in order; first hit wins.
+_CATEGORY_PATTERNS = [
+    ("Tents", r"\btents?\b|\bshelters?\b"),
+    ("Sleeping Bags", r"\bsleeping bags?\b|\bsleeping\b|\bbags?\b"),
+    ("Insulated Jackets", r"\bjackets?\b|\bparkas?\b|\bdown\b|\bbase ?layers?\b|\blayers?\b|\binsulat"),
+    ("Hiking Footwear", r"\bboots?\b|\bfootwear\b|\bshoes?\b"),
+    ("Backpacks", r"\bbackpacks?\b|\bpacks?\b|\bdaypacks?\b"),
+]
+
+
+def _detect_category(text: str) -> str | None:
+    """Return the catalog category the shopper explicitly named, if any."""
+    low = (text or "").lower()
+    for category, pattern in _CATEGORY_PATTERNS:
+        if re.search(pattern, low):
+            return category
+    return None
 
 
 def _text(text: str):
@@ -107,19 +128,49 @@ def _last_tool_name(messages: list) -> str:
     return ""
 
 
-def _recommend(answer: str) -> str:
-    """Pick the best catalog item for the shopper's stated needs (semantic)."""
+def _request_before_clarify(messages: list) -> str:
+    """The user's original ask that triggered our clarifying question.
+
+    The recommendation depends on both turns: the request names the category
+    ("a tent"), the answer gives the conditions ("summer backpacking"). Embedding
+    only the answer loses the category, so we recover the request that came just
+    before the _CLARIFY_RECO assistant turn.
+    """
+    clarify_idx = None
+    for i in range(len(messages) - 1, -1, -1):
+        m = messages[i]
+        if m.get("role") == "assistant" and m.get("content") == _CLARIFY_RECO:
+            clarify_idx = i
+            break
+    if clarify_idx is None:
+        return ""
+    for j in range(clarify_idx - 1, -1, -1):
+        mj = messages[j]
+        if mj.get("role") == "user" and isinstance(mj.get("content"), str):
+            return mj["content"]
+    return ""
+
+
+def _recommend(request: str, answer: str) -> str:
+    """Pick the best catalog item from the whole exchange (original request +
+    clarifying answer). If the shopper named a category, stay within it."""
+    category = _detect_category(request) or _detect_category(answer)
+    candidates = [c for c in _CATALOG if category is None or c[2] == category]
+    if not candidates:  # named a category we don't stock — fall back to all
+        candidates = _CATALOG
+    query = f"{request}. {answer}".strip()
+    idx = 0
     try:
         from app.embeddings import get_embedder
 
         model = get_embedder()
-        descs = [f"{name}: {blurb}" for name, _price, blurb in _CATALOG]
+        descs = [f"{name}: {blurb}" for name, _price, _cat, blurb in candidates]
         vecs = model.encode(descs, normalize_embeddings=True)
-        q = model.encode([answer], normalize_embeddings=True)[0]
+        q = model.encode([query], normalize_embeddings=True)[0]
         idx = int((vecs @ q).argmax())
-    except Exception:  # noqa: BLE001 — degrade to first item, never crash
+    except Exception:  # noqa: BLE001 — degrade to first candidate, never crash
         idx = 0
-    name, price, blurb = _CATALOG[idx]
+    name, price, _cat, blurb = candidates[idx]
     return f"Based on that, I'd suggest the {name} (${price}) — {blurb}. Want more detail or another option?"
 
 
@@ -158,7 +209,8 @@ class MockAnthropic:
             if follow.intent == "handoff" or (follow.intent == "order" and intent.extract_order_number(user)) or follow.intent in ("returns", "shipping"):
                 pass  # fall through to the normal classification handling below
             else:
-                return _resp("end_turn", [_text(_recommend(user))])
+                request = _request_before_clarify(messages)
+                return _resp("end_turn", [_text(_recommend(request, user))])
         if prev == _ORDER_ASK and intent.extract_order_number(user):
             num = intent.extract_order_number(user)
             return _resp("tool_use", [_tool("get_order_status", "m_order", order_number=num)])

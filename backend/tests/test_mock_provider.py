@@ -70,3 +70,23 @@ def test_clarify_then_returns_pivot():
     second = _run(session, "what's your return policy")
     reply = second.reply
     assert "30" in reply and "return" in reply.lower()
+
+
+def test_recommend_keeps_requested_category():
+    """A tent request stays a tent even when the trip answer omits 'tent' and
+    leans on 'backpacking' (which otherwise pulls the Trailhead pack)."""
+    session = Session(session_id="rec_cat")
+    _run(session, "what tent should I buy?")
+    second = _run(session, "three-season backpacking in summer")
+    low = second.reply.lower()
+    assert "wildwood" in low  # a Tent
+    assert "trailhead" not in low  # not the backpack
+
+
+def test_recommend_without_named_category_still_responds():
+    """No explicit category named — still returns a concrete product."""
+    session = Session(session_id="rec_nocat")
+    _run(session, "I need some gear")
+    second = _run(session, "deep cold winter camping")
+    names = ("wildwood", "polaris", "summit", "aurora", "granite", "trailhead")
+    assert any(n in second.reply.lower() for n in names)
