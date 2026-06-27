@@ -152,7 +152,13 @@ class MockAnthropic:
 
         # Multi-turn: this turn answers a clarifying question we just asked.
         if prev == _CLARIFY_RECO:
-            return _resp("end_turn", [_text(_recommend(user))])
+            follow = intent.classify(user)
+            # A clear pivot to another topic re-routes; otherwise treat this turn as
+            # the answer to our clarifying question and recommend.
+            if follow.intent == "handoff" or (follow.intent == "order" and intent.extract_order_number(user)) or follow.intent in ("returns", "shipping"):
+                pass  # fall through to the normal classification handling below
+            else:
+                return _resp("end_turn", [_text(_recommend(user))])
         if prev == _ORDER_ASK and intent.extract_order_number(user):
             num = intent.extract_order_number(user)
             return _resp("tool_use", [_tool("get_order_status", "m_order", order_number=num)])

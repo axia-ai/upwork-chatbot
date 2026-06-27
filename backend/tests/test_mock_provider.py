@@ -54,3 +54,19 @@ def test_two_fallbacks_auto_escalate():
     second = _run(session, "tell me a joke")
     assert second.handoff is True  # 2-consecutive-fallback rule
     assert second.state == "live_agent"
+
+
+def test_clarify_then_handoff_escalates():
+    session = Session(session_id="clarify_handoff")
+    _run(session, "what tent should I buy")
+    second = _run(session, "actually get me a human")
+    assert second.handoff is True
+    assert second.state == "live_agent"
+
+
+def test_clarify_then_returns_pivot():
+    session = Session(session_id="clarify_returns")
+    _run(session, "what tent should I buy")
+    second = _run(session, "what's your return policy")
+    reply = second.reply
+    assert "30" in reply and "return" in reply.lower()

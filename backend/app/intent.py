@@ -51,7 +51,7 @@ _PROTOTYPES: dict[str, list[str]] = {
     ],
 }
 
-# Tuned against the eval set in tests/test_intent.py.
+# Chosen to clear the labeled-accuracy bar in tests/test_intent.py.
 _CLEAR_THRESHOLD = 0.30
 _MARGIN = 0.05
 
