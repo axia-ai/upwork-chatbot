@@ -57,6 +57,17 @@ frontend (React + Vite + TS + Tailwind)        backend (FastAPI + Claude + RAG +
 | LLM | Claude `claude-sonnet-4-6` (Anthropic SDK) |
 | Retrieval | sentence-transformers (`all-MiniLM-L6-v2`), local |
 
+## Demo mode (evaluate without an API key)
+
+The bot runs out of the box with **no Anthropic API key**. When `ANTHROPIC_API_KEY`
+is unset, it serves deterministic, local responses (a mock language layer over the
+same intent + RAG logic) so all four use cases — order tracking, returns/shipping,
+product recommendations, and human handoff — can be evaluated locally at no cost.
+A "● Demo mode" badge appears in the chat header.
+
+Set `ANTHROPIC_API_KEY` to use live Claude (`claude-sonnet-4-6`). To force demo
+mode while a key is set, also set `DEMO_MODE=true`.
+
 ## Quick start
 
 You'll need **Python 3.9–3.12**, **Node 18+**, and an **Anthropic API key**.

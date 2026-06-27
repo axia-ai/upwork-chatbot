@@ -20,6 +20,17 @@ export ANTHROPIC_API_KEY=sk-ant-...
 The embedding model (~90 MB) downloads once on first use and is then cached
 locally; no key or network is needed for it afterwards.
 
+## Demo mode (evaluate without an API key)
+
+The bot runs out of the box with **no Anthropic API key**. When `ANTHROPIC_API_KEY`
+is unset, it serves deterministic, local responses (a mock language layer over the
+same intent + RAG logic) so all four use cases — order tracking, returns/shipping,
+product recommendations, and human handoff — can be evaluated locally at no cost.
+A "● Demo mode" badge appears in the chat header.
+
+Set `ANTHROPIC_API_KEY` to use live Claude (`claude-sonnet-4-6`). To force demo
+mode while a key is set, also set `DEMO_MODE=true`.
+
 ## Run
 
 ```bash

@@ -64,9 +64,9 @@ class Retriever:
     def _ensure_embedded(self) -> None:
         if self._embeddings is not None:
             return
-        from sentence_transformers import SentenceTransformer
+        from app.embeddings import get_embedder
 
-        self._model = SentenceTransformer(self._model_name)
+        self._model = get_embedder()
         self._embeddings = self._model.encode(
             [c.text for c in self.chunks],
             normalize_embeddings=True,
