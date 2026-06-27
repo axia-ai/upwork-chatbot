@@ -38,4 +38,6 @@ app.include_router(tickets.router)
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok"}
+    from app.config import current_mode
+
+    return {"status": "ok", "mode": current_mode()}

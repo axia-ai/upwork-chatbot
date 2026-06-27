@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ChatIcon, CloseIcon, SendIcon } from './icons'
 import { NorthStar } from './Topo'
 import { QUICK_REPLIES, type ChatMessage } from '../data/mock'
+import { getHealth } from '../lib/api'
 
 // Presentational floating widget. Conversation state lives in App and is shared
 // with the in-ticket composer (one ChatMessage model, one send path).
@@ -21,7 +22,14 @@ export function ChatWidget({
   onSend: (text: string) => void
 }) {
   const [input, setInput] = useState('')
+  const [demoMode, setDemoMode] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    getHealth()
+      .then((h) => setDemoMode(h.mode === 'demo'))
+      .catch(() => setDemoMode(false))
+  }, [])
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
@@ -45,7 +53,17 @@ export function ChatWidget({
                 <NorthStar className="h-5 w-5" />
               </span>
               <div className="leading-tight">
-                <p className="font-display text-[1.05rem] font-semibold">North Star Guide</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-display text-[1.05rem] font-semibold">North Star Guide</p>
+                  {demoMode && (
+                    <span
+                      className="demo-badge"
+                      title="Responses are deterministic — no API key in use."
+                    >
+                      ● Demo mode
+                    </span>
+                  )}
+                </div>
                 <p className="eyebrow mt-0.5 text-[0.6rem] text-bone/70">
                   {liveAgent ? 'Connecting a human' : 'Support · online'}
                 </p>

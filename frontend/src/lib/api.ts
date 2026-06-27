@@ -13,6 +13,15 @@ export interface ChatResponse {
   ticket_id: string | null
 }
 
+export interface HealthResponse {
+  status: string
+  mode: 'demo' | 'live'
+}
+
+export async function getHealth(): Promise<HealthResponse> {
+  return unwrap<HealthResponse>(await fetch(`${API}/health`))
+}
+
 async function unwrap<T>(res: Response): Promise<T> {
   if (!res.ok) {
     let detail = `Request failed (${res.status})`
