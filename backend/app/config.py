@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     claude_model: str = "claude-sonnet-4-6"
 
+    # Demo mode forces the deterministic mock provider even when a key is set.
+    demo_mode: bool = False
+
     # Local RAG.
     embedding_model: str = "all-MiniLM-L6-v2"
     knowledge_base_dir: Path = _BACKEND_DIR / "app" / "knowledge_base"
@@ -35,3 +38,9 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+def current_mode() -> str:
+    """'demo' when no key is set or DEMO_MODE is on; otherwise 'live'."""
+    s = get_settings()
+    return "demo" if (s.demo_mode or not s.anthropic_api_key) else "live"

@@ -102,7 +102,13 @@ class AgentResult:
 
 @lru_cache
 def get_client():
-    """Real Anthropic client, created from the env-provided key."""
+    """Real Anthropic client, or the deterministic mock in demo mode."""
+    from app.config import current_mode
+
+    if current_mode() == "demo":
+        from app.mock_provider import MockAnthropic
+
+        return MockAnthropic()
     import anthropic
 
     settings = get_settings()
