@@ -6,6 +6,7 @@ from app import agent, config
 from app.mock_provider import MockAnthropic
 
 
+# These tests set ANTHROPIC_API_KEY and DEMO_MODE via monkeypatch.setenv; OS env vars take precedence over the .env file in pydantic-settings, so backend/.env cannot shadow them.
 @pytest.fixture(autouse=True)
 def _clear_caches():
     config.get_settings.cache_clear()
@@ -26,6 +27,7 @@ def test_key_without_flag_is_live(monkeypatch):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
     monkeypatch.setenv("DEMO_MODE", "false")
     assert config.current_mode() == "live"
+    assert not isinstance(agent.get_client(), MockAnthropic)
 
 
 def test_key_with_demo_flag_is_demo(monkeypatch):
