@@ -48,12 +48,12 @@ _AMBIGUOUS_CLARIFY = (
 
 # Small in-code catalog for semantic recommendation (mirrors products.md).
 _CATALOG = [
-    ("Wildwood 3P Tent", 349, "a three-season tent shelter under 5 lbs — ideal for summer and shoulder-season backpacking trips"),
+    ("Wildwood 3P Tent", 349, "a three-season, two-vestibule shelter under 5 lbs — great for backpacking and car camping in summer to shoulder-season"),
     ("Polaris -10° Bag", 219, "a mummy-cut down sleeping bag rated for frosty nights — best for deep cold and shoulder-season backpacking"),
     ("Summit Down Parka", 289, "an 800-fill down parka for alpine cold — best for deep-cold conditions"),
     ("Aurora Base Layer", 64, "a versatile merino base layer for any trip"),
     ("Granite GTX Boots", 199, "waterproof leather mids with a grippy sole — great for day hikes and rugged, wet terrain"),
-    ("Trailhead 45 Pack", 179, "a ventilated weekend carry pack — great for multi-day trips needing storage"),
+    ("Trailhead 45 Pack", 179, "a ventilated weekend pack — ideal for two-to-three-day backpacking trips"),
 ]
 
 

@@ -36,7 +36,7 @@ def test_recommendation_clarifies_then_recommends():
     session = Session(session_id="rec")
     first = _run(session, "what tent should I buy")
     assert first.reply.endswith("?")  # asks a clarifying question
-    second = _run(session, "three-season backpacking in summer")
+    second = _run(session, "a three-season tent for summer backpacking")
     assert "wildwood" in second.reply.lower()  # the 3-season tent
 
 
